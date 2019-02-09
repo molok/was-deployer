@@ -42,7 +42,8 @@ public class Deployer {
                     cli.hasOption("l"),
                     cli.getOptionValue("n"),
                     cli.hasOption("i"),
-                    cli.getOptionValue("sn", ""));
+                    cli.getOptionValue("sn", ""),
+                    cli.hasOption("g"));
 
             return RetCode.SUCCESS.code;
         } catch (MissingOptionException e) {
@@ -165,6 +166,11 @@ public class Deployer {
                 .desc("Java regex of the server where the WAR will be installed, e.g. (.*AppCluster.*|.*webserver.*)")
                 .build());
 
+        opts.addOption(Option.builder("g")
+                .longOpt("gui")
+                .desc("the browser is shown, by the default it is run headless")
+                .build());
+
         return opts;
     }
 
@@ -176,11 +182,13 @@ public class Deployer {
                        boolean isLocalFile,
                        String appName,
                        boolean newInstall,
-                       String serverNamesRegex) {
+                       String serverNamesRegex,
+                       boolean showGui ) {
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless");
-        options.addArguments("--disable-gpu");
+        if (!showGui) {
+            options.addArguments("--headless");
+        }
         WebDriver driver = new ChromeDriver(options);
         goToConsole(baseUrl, user, password, driver);
 
