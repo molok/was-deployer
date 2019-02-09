@@ -192,6 +192,14 @@ public class Main {
             options.addArguments("--headless");
         }
         WebDriver driver = new ChromeDriver(options);
+        try {
+            doDeploy(baseUrl, user, password, warLocation, contextRoot, isLocalFile, appName, newInstall, serverNamesRegex, driver);
+        } finally {
+            driver.quit();
+        }
+    }
+
+    private void doDeploy(String baseUrl, String user, String password, String warLocation, String contextRoot, boolean isLocalFile, String appName, boolean newInstall, String serverNamesRegex, WebDriver driver) {
         goToConsole(baseUrl, user, password, driver);
 
         if (newInstall) {
