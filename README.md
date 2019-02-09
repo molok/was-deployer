@@ -6,7 +6,7 @@ This is a little utility to deploy WARs on IBM Websphere Application Server (WAS
 WAS has a quite capable command line interface but the sysadmins don't let me use it so I dediced to 
 automate this mindless job.
 
-This is "tested" on WAS 8.5.5.9 and 8.5.5.13 traditional profile only (not the Liberty one), use it at your own risk.
+This is "tested" on WAS 8.5.5.9, 8.5.5.13 and 9.0.0.10 traditional profile only (not the Liberty one), use it at your own risk.
 
 The code is written in Java and uses Selenium with the Chrome WebDriver, it can be run headless or not.
 On the first startup the Chrome WebDriver is downloaded for the official website.
