@@ -1,4 +1,4 @@
-package io.github.molok;
+package io.github.molok.wasdeployer;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.cli.*;
@@ -16,8 +16,8 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 
-public class Deployer {
-    static Logger log = LoggerFactory.getLogger(Deployer.class);
+public class Main {
+    static Logger log = LoggerFactory.getLogger(Main.class);
 
     private enum RetCode {
         SUCCESS(0), ERROR(1), INVALID_ARGS(2);
@@ -33,10 +33,10 @@ public class Deployer {
         try {
             CommandLine cli = new DefaultParser().parse(cliOptions(), args);
 
-            new Deployer().deploy(
+            new Main().deploy(
                     cli.getOptionValue("s"),
-                    cli.getOptionValue("u").split(":")[0],
-                    cli.getOptionValue("u").split(":")[1],
+                    cli.getOptionValue("a").split(":")[0],
+                    cli.getOptionValue("a").split(":")[1],
                     cli.getOptionValue("f", cli.getOptionValue("r")),
                     cli.getOptionValue("c", cli.getOptionValue("n")),
                     cli.hasOption("l"),
@@ -87,7 +87,7 @@ public class Deployer {
         HelpFormatter hf = new HelpFormatter();
         hf.setWidth(120);
         hf.printHelp("java -jar was-deployer.jar ", "", cliOptions(),
-                    "\nversion " + Deployer.class.getPackage().getImplementationVersion() + "\n"
+                    "\nversion " + Main.class.getPackage().getImplementationVersion() + "\n"
                         + "\nexample: java -jar was-deployer -i -f ./app.war -n app -s 'https://localhost:9043' -u wsadmin:secret\n\n", true);
     }
 
@@ -148,6 +148,7 @@ public class Deployer {
         opts.addOption(Option.builder("n")
                 .longOpt("name")
                 .hasArg()
+                .required()
                 .argName("app_name")
                 .desc("name of the application")
                 .build());
