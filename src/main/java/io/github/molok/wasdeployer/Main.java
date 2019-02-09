@@ -39,7 +39,7 @@ public class Main {
                     cli.getOptionValue("a").split(":")[1],
                     cli.getOptionValue("f", cli.getOptionValue("r")),
                     cli.getOptionValue("c", cli.getOptionValue("n")),
-                    cli.hasOption("l"),
+                    cli.hasOption("f"),
                     cli.getOptionValue("n"),
                     cli.hasOption("i"),
                     cli.getOptionValue("sn", ""),
@@ -197,6 +197,7 @@ public class Main {
         if (newInstall) {
             driver.findElement(By.id("button.installApplicationDeployment")).click();
             if (isLocalFile) {
+                driver.findElement(By.id("local")).click();
                 driver.findElement(By.id("localFilepath")).sendKeys(warLocation);
             } else {
                 driver.findElement(By.id("server")).click();
