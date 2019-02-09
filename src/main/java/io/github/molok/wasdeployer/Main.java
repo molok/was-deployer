@@ -85,7 +85,7 @@ public class Main {
 
     private static void printUsage() {
         HelpFormatter hf = new HelpFormatter();
-        hf.setWidth(120);
+        hf.setWidth(80);
         hf.printHelp("java -jar was-deployer.jar ", "", cliOptions(),
                     "\nversion " + Main.class.getPackage().getImplementationVersion() + "\n"
                         + "\nexample: java -jar was-deployer -i -f ./app.war -n app -s 'https://localhost:9043' -u wsadmin:secret\n\n", true);
@@ -113,11 +113,12 @@ public class Main {
         opts.addOptionGroup(installOrUpdate);
 
         OptionGroup localOrRemote = new OptionGroup();
+        localOrRemote.setRequired(true);
         localOrRemote.addOption( Option.builder("f")
                 .longOpt("file")
                 .hasArg()
                 .argName("war_path")
-                .desc("location of the WAR to deploy")
+                .desc("location of the WAR to deploy, it needs to be accessible by the server")
                 .build());
         localOrRemote.addOption(Option.builder("r")
                 .longOpt("remote")
