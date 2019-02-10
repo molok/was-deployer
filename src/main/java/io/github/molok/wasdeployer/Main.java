@@ -187,11 +187,10 @@ public class Main {
                        String serverNamesRegex,
                        boolean showGui ) {
         WebDriverManager.chromedriver().setup();
-        ChromeOptions options = new ChromeOptions();
-        if (!showGui) {
-            options.addArguments("--headless");
-        }
-        WebDriver driver = new ChromeDriver(options);
+        WebDriver driver = new ChromeDriver(
+                new ChromeOptions()
+                        .setAcceptInsecureCerts(true)
+                        .setHeadless(!showGui));
         try {
             doDeploy(baseUrl, user, password, warLocation, contextRoot, isLocalFile, appName, newInstall, serverNamesRegex, driver);
         } finally {
