@@ -12,6 +12,8 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
@@ -199,6 +201,12 @@ public class Main {
     }
 
     private void doDeploy(String baseUrl, String user, String password, String warLocation, String contextRoot, boolean isLocalFile, String appName, boolean newInstall, String serverNamesRegex, WebDriver driver) {
+        if (  isLocalFile &&
+            !(   Files.isRegularFile(Paths.get(warLocation))
+              || Files.isReadable(Paths.get(warLocation) ))) {
+            throw new IllegalArgumentException("WAR (" + warLocation + ") not found or unreadable");
+        }
+
         goToConsole(baseUrl, user, password, driver);
 
         if (newInstall) {
