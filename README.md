@@ -1,15 +1,15 @@
-WAS-DEPLOYER
+WAS-Deployer
 ===
 
 This is a little utility to deploy WARs on IBM Websphere Application Server (WAS) using its web interface.
 
-WAS has a quite capable command line interface but the sysadmins don't let me use it so I dediced to 
-automate this mindless job.
+WAS has a quite capable command line interface but the sysadmins only let me use the web-interface so I automated this
+mindless task for my own sanity.
 
 This is "tested" on WAS 8.5.5.9, 8.5.5.13 and 9.0.0.10 traditional profile only (not the Liberty one), use it at your own risk.
 
 The code is written in Java and uses Selenium with the Chrome WebDriver, it can be run headless or not.
-On the first startup the Chrome WebDriver is downloaded for the official website.
+On the first startup the Chrome WebDriver is downloaded for the official website, a Chrome installation is required.
 
 ```
 usage: java -jar was-deployer.jar  -a <user:password> [-c <app_context_root>] -f
@@ -33,7 +33,7 @@ usage: java -jar was-deployer.jar  -a <user:password> [-c <app_context_root>] -f
                                        (.*AppCluster.*|.*webserver.*)
  -u,--update                           update the application
 
-version 1.0-SNAPSHOT
+version 1.0.1
 
 example: java -jar was-deployer -i -f ./app.war -n app -s 'https://localhost:9043' -a wsadmin:secret
 
