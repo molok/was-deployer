@@ -366,6 +366,10 @@ public class Main {
 
         String appsUrl = driver.findElement(By.xpath("//a[contains(@href, 'ApplicationDeployment.content.main')]")).getAttribute("href");
         driver.get(appsUrl);
+        driver.findElement(By.xpath("//a[@aria-controls='com_ibm_ws_prefsTable']")).click();
+        driver.findElement(By.xpath("//td[@class='find-filter']/input[@type='text']")).clear();
+        driver.findElement(By.xpath("//td[@class='find-filter']/input[@type='text']")).sendKeys("10000");
+        driver.findElement(By.xpath("//*[@name='submit2' and @type='submit']")).click();
         printMessages("opened applications", driver);
     }
 
