@@ -264,8 +264,8 @@ public class Main {
         driver.findElement(By.xpath("//td[contains(@class, 'wizard-button-section')]/input[2]")).click();
         printMessages("mapped servers", driver);
 
-        if (newInstall) {
-            assertStep(driver, "appmanagement.virtualhosts.towebmodules");
+        if ("appmanagement.virtualhosts.towebmodules".equalsIgnoreCase(
+                driver.findElement(By.xpath("//input[@name='currentStep']")).getAttribute("value"))) {
             // next button
             driver.findElement(By.xpath("//td[contains(@class, 'wizard-button-section')]/input[2]")).click();
             printMessages("mapped web-modules", driver);
