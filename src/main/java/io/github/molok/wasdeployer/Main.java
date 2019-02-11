@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
@@ -200,11 +201,7 @@ public class Main {
     }
 
     private void doDeploy(String baseUrl, String user, String password, String warLocation, String contextRoot, boolean isLocalFile, String appName, boolean newInstall, String serverNamesRegex, WebDriver driver) {
-        if (  isLocalFile &&
-            !(   Files.isRegularFile(Paths.get(warLocation))
-              || Files.isReadable(Paths.get(warLocation) ))) {
-            throw new IllegalArgumentException("WAR (" + warLocation + ") not found or unreadable");
-        }
+        String absolutePathLocation = canonicalizePath(warLocation, isLocalFile);
 
         goToConsole(baseUrl, user, password, driver);
 
@@ -212,22 +209,23 @@ public class Main {
             driver.findElement(By.id("button.installApplicationDeployment")).click();
             if (isLocalFile) {
                 driver.findElement(By.id("local")).click();
-                driver.findElement(By.id("localFilepath")).sendKeys(warLocation);
+                driver.findElement(By.id("localFilepath")).sendKeys(absolutePathLocation);
             } else {
                 driver.findElement(By.id("server")).click();
-                driver.findElement(By.id("remoteFilepath")).sendKeys(warLocation);
+                driver.findElement(By.id("remoteFilepath")).sendKeys(absolutePathLocation);
             }
         } else {
             driver.findElement(By.id(appName + ".ear/deployments/" + appName)).click();
             driver.findElement(By.id("button.updateApplicationDeployment")).click();
             if (isLocalFile) {
-                driver.findElement(By.id("earUpdate_localFilepath")).sendKeys(warLocation);
+                driver.findElement(By.id("earUpdate_localFilepath")).sendKeys(absolutePathLocation);
             } else {
                 driver.findElement(By.id("earUpdate_server")).click();
-                driver.findElement(By.id("earUpdate_remoteFilepath")).sendKeys(warLocation);
+                driver.findElement(By.id("earUpdate_remoteFilepath")).sendKeys(absolutePathLocation);
             }
         }
 
+        printMessages("uploading war, this may take a while...", driver);
         driver.findElement(By.id("nextAction")).click();
         printMessages("uploaded war", driver);
 
@@ -236,7 +234,7 @@ public class Main {
 
         if (newInstall) {
             /* settings the application name, wonky logic but the id of the input field changes from version to version... */
-            String defaultName = Paths.get(warLocation).getFileName().toString().replace(".", "_");
+            String defaultName = Paths.get(absolutePathLocation).getFileName().toString().replace(".", "_");
             driver.findElement(By.xpath("//input[@value='"+ defaultName + "']")).clear();
             driver.findElement(By.xpath("//input[@value='"+ defaultName + "']")).sendKeys(appName);
         }
@@ -307,6 +305,21 @@ public class Main {
         printMessages("start completed", driver);
 
         log.info("done!");
+    }
+
+    private String canonicalizePath(String warLocation, boolean isLocalFile) {
+        String absolutePathLocation;
+        Path path = Paths.get(warLocation);
+        if (isLocalFile) {
+            if (!Files.isRegularFile(path) || !Files.isReadable(path)) {
+                throw new IllegalArgumentException("WAR (" + warLocation + ") not found or unreadable");
+            } else {
+                absolutePathLocation = path.toAbsolutePath().toString();
+            }
+        } else {
+           absolutePathLocation = warLocation;
+        }
+        return absolutePathLocation;
     }
 
     private void printMessages(String page, WebDriver driver) {
