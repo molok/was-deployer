@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
@@ -291,7 +290,7 @@ public class Main {
         new WebDriverWait(driver, 180)
                 .pollingEvery(Duration.ofSeconds(1))
                 .until(drv -> {
-                    drv.findElements(By.xpath("//p[@class='status-text']")).forEach(t -> log.info(t.getText()));
+                    drv.findElements(By.xpath("//p[@class='status-text']")).forEach(t -> System.out.println("WAS: " + t.getText().replace("\n", "\nWAS: ")));
                     return drv.findElement(By.xpath("//a[contains(@href, 'directsave=true')]"));
                 })
                 .click();
@@ -314,7 +313,7 @@ public class Main {
         log.info(page);
         List<WebElement> msgPostStart = driver.findElements(By.xpath("//tbody[@id='com_ibm_ws_inlineMessages']"));
         if (msgPostStart.size() > 0) {
-            log.info(msgPostStart.get(0).getText());
+            System.out.println("WAS: " + msgPostStart.get(0).getText().replace("\n", "\nWAS: "));
         }
     }
 
