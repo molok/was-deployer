@@ -24,6 +24,10 @@ public class Main {
             if (args.length > 0) {
                 String action = args[0];
                 switch (action) {
+                    case "config-sample": {
+                        ConfigManager.configSample();
+                        return RetCode.SUCCESS.code;
+                    }
                     case "deploy": {
                         try {
                             CommandLine cli = new DefaultParser().parse(deployOptions(), args);
@@ -34,7 +38,7 @@ public class Main {
                             String serverNames;
 
                             if (cli.hasOption("p")) {
-                                ConfigReader.Profile profile = ConfigReader.profile(cli.getOptionValue("p"));
+                                ConfigManager.Profile profile = ConfigManager.readProfile(cli.getOptionValue("p"));
                                 server = profile.server;
                                 user = profile.user;
                                 password = profile.password;
@@ -73,7 +77,7 @@ public class Main {
                             String password;
 
                             if (cli.hasOption("p")) {
-                                ConfigReader.Profile profile = ConfigReader.profile(cli.getOptionValue("p"));
+                                ConfigManager.Profile profile = ConfigManager.readProfile(cli.getOptionValue("p"));
                                 server = profile.server;
                                 user = profile.user;
                                 password = profile.password;
@@ -138,8 +142,10 @@ public class Main {
         HelpFormatter hf = new HelpFormatter();
         hf.setSyntaxPrefix("");
         hf.setWidth(80);
-        hf.printHelp("java -jar was-deployer.jar [action] args...\ndeploy ", "", deployOptions(), "", false);
-        hf.printHelp("\n\nlist ", "", listOptions(),
+        hf.printHelp("java -jar was-deployer.jar deploy|list|config-sample [args...]" +
+                                 "\ndeploy ", "", deployOptions(), "", false);
+        System.out.println("\nconfig-sample    prints a configuration sample file");
+        hf.printHelp("\nlist ", "", listOptions(),
                 "\nversion " + Main.class.getPackage().getImplementationVersion() + "\n"
                      + "\nexample: java -jar was-deployer deploy -s 'https://localhost:9043' -u wsadmin:secret -i -f ./app.war -n app \n\n", false);
     }
