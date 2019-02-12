@@ -35,7 +35,23 @@ usage: java -jar was-deployer.jar deploy -a <user:password> [-c <app_context_roo
 
 version 1.0.1
 
-example: java -jar was-deployer deploy -i -f ./app.war -n app -s 'https://localhost:9043' -a wsadmin:secret
+examples: 
+deploy app.war to a WAS local instance
+    $ java -jar was-deployer.jar deploy -i -f ./app.war -n app \
+                                        -s 'https://localhost:9043' \
+                                        -a wsadmin:secret
+
+deploy app.war to a WAS instance (dev) configured in $HOME/.config/was-deployer.yaml
+    $ java -jar was-deployer.jar deploy -i -f ./app.war -n app -p dev
+
+$HOME/.config/was-deployer.yaml looks like this:
+    profiles:
+        - name: "dev"
+          user: "wsadmin"
+          password: "secret"
+          server: "https://localhost:9043" 
+          serverNames: ""
+
 
 ```
 

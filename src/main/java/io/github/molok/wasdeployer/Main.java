@@ -4,6 +4,7 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Paths;
 import java.util.List;
 
 public class Main {
@@ -49,17 +50,24 @@ public class Main {
                                 password = cli.getOptionValue("a").split(":")[1];
                                 serverNames = cli.getOptionValue("sn", "");
                             }
+                            String warLocation = cli.getOptionValue("f", cli.getOptionValue("r"));
+
+                            String appName = cli.getOptionValue("n", toAppName(warLocation));
+                            String contextRoot = cli.getOptionValue("c", appName);
+
                             new App().deploy(
                                     server,
                                     user,
                                     password,
-                                    cli.getOptionValue("f", cli.getOptionValue("r")),
-                                    cli.getOptionValue("c", cli.getOptionValue("n")),
+                                    warLocation,
+                                    contextRoot,
                                     cli.hasOption("f"),
-                                    cli.getOptionValue("n"),
+                                    appName,
                                     cli.hasOption("i"),
                                     serverNames,
-                                    cli.hasOption("g"));
+                                    cli.hasOption("g"),
+                                    verbosityLevel(cli)
+                            );
 
                             return RetCode.SUCCESS.code;
                         } catch (MissingOptionException e) {
@@ -87,10 +95,7 @@ public class Main {
                                 password = cli.getOptionValue("a").split(":")[1];
                             }
 
-                            new App().list(
-                                    server,
-                                    user,
-                                    password);
+                            new App().list( server, user, password, verbosityLevel(cli));
 
                             return RetCode.SUCCESS.code;
                         } catch (MissingOptionException e) {
@@ -111,6 +116,18 @@ public class Main {
             e.printStackTrace();
             return RetCode.ERROR.code;
         }
+    }
+
+    private static int verbosityLevel(CommandLine cli) {
+        return cli.hasOption("vv") ? 2 : cli.hasOption("v") ? 1 : 0;
+    }
+
+    static String toAppName(String warLocation) {
+        String res = Paths.get(warLocation).toFile().getName();
+        if (res.indexOf(".") >= 0) {
+            res = res.substring(0, res.indexOf("."));
+        }
+        return res.replaceAll("[\\/,#$@:;\"*?<>|=+&%\\]]", "_");
     }
 
     private static String missingArguments(MissingOptionException e, Options options) {
@@ -138,33 +155,56 @@ public class Main {
                       .orElse("") + "]";
     }
 
+    private static int terminalWidth() {
+        try {
+            Process p = Runtime.getRuntime().exec(new String[] {"bash", "-c", "tput cols 2> /dev/tty" });
+            p.waitFor();
+            byte[] output = new byte[10];
+            p.getInputStream().read(output);
+            return Integer.parseInt(new String(output).trim());
+        } catch (Exception e) {
+            return 100;
+        }
+    }
+
     private static void printUsage() {
+        System.out.println("WAS-Deployer v" + Main.class.getPackage().getImplementationVersion() + "\n"
+                          + "\nusage:\n");
         HelpFormatter hf = new HelpFormatter();
         hf.setSyntaxPrefix("");
-        hf.setWidth(80);
-        hf.printHelp("java -jar was-deployer.jar deploy|list|config-sample [args...]" +
-                                 "\ndeploy ", "", deployOptions(), "", false);
-        System.out.println("\nconfig-sample    prints a configuration sample file");
-        hf.printHelp("\nlist ", "", listOptions(),
-                "\nversion " + Main.class.getPackage().getImplementationVersion() + "\n"
-                     + "\nexample: java -jar was-deployer deploy -s 'https://localhost:9043' -u wsadmin:secret -i -f ./app.war -n app \n\n", false);
+        hf.setWidth(terminalWidth());
+        hf.printHelp("java -jar was-deployer.jar deploy|list|config-sample [<args>]\n" +
+                                 "\ndeploy        (deploy a war on a WAS instance)",
+                          "", deployOptions(), "", false);
+        hf.printHelp("\nlist          (list installed applications and their current state)", "", listOptions(), "");
+        System.out.println("\nconfig-sample (prints a configuration example, to be placed in " + ConfigManager.DEFAULT_LOCATION + ")");
     }
 
     private static Options listOptions() {
         Options opts = new Options();
 
+        opts.addOption(Option.builder("v")
+                .longOpt("verbose")
+                .desc("Increase verbosity")
+                .build());
+
+        opts.addOption(Option.builder("vv")
+                .longOpt("very-verbose")
+                .desc("Increase verbosity more")
+                .build());
+
         opts.addOption(Option.builder("p")
                 .longOpt("profile")
                 .hasArg()
                 .argName("profile_name")
-                .desc("Name of the profile set in ~/.config/was-deployer.conf or $HOME/.was-deployer.conf")
+                .desc("Name of the profile set in " + ConfigManager.DEFAULT_LOCATION + ", overrides --server, --auth")
                 .build());
 
         opts.addOption(Option.builder("s")
                 .longOpt("server")
                 .hasArg()
                 .argName("server_url")
-                .desc("URL of the server, e.g. https://localhost:9043")
+                .desc("URL of the server, e.g. https://example.org:9043")
                 .build());
 
         opts.addOption(Option.builder("a")
@@ -181,12 +221,28 @@ public class Main {
     private static Options deployOptions() {
         Options opts = new Options();
 
+        opts.addOption(Option.builder("v")
+                .longOpt("verbose")
+                .desc("Increase verbosity")
+                .build());
+
+        opts.addOption(Option.builder("vv")
+                .longOpt("very-verbose")
+                .desc("Increase verbosity more")
+                .build());
+
+        opts.addOption(Option.builder("p")
+                .longOpt("profile")
+                .hasArg()
+                .argName("profile_name")
+                .desc("Name of the profile set in " + ConfigManager.DEFAULT_LOCATION + ", overrides --server, --auth and --servernames")
+                .build());
+
         opts.addOption(Option.builder("s")
                 .longOpt("server")
                 .hasArg()
                 .argName("server_url")
-                .required()
-                .desc("URL of the server, e.g. https://localhost:9043")
+                .desc("URL of the server, e.g. https://example.org:9043")
                 .build());
 
         opts.addOption(Option.builder("a")
@@ -194,7 +250,6 @@ public class Main {
                 .hasArg()
                 .valueSeparator(':')
                 .argName("user:password")
-                .required()
                 .desc("WAS username and password, e.g. wsadmin:secret")
                 .build());
 
@@ -248,9 +303,8 @@ public class Main {
         opts.addOption(Option.builder("n")
                 .longOpt("name")
                 .hasArg()
-                .required()
                 .argName("app_name")
-                .desc("name of the application")
+                .desc("name of the application (if not supplied the name it is derived from the war filename")
                 .build());
 
         opts.addOption(Option.builder("sn")

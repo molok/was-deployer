@@ -4,18 +4,16 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
 public class ConfigManager {
     public static final String DEFAULT_LOCATION = System.getProperty("user.home") + "/.config/was-deployer.yaml";
-    public static final String FALLBACK_LOCATION = System.getProperty("user.home") + "/.was-deployer.yaml";
 
     public static void configSample() {
         System.out.println(
-            "# put this in " + DEFAULT_LOCATION + "\n" +
+            "# edit and put this in " + DEFAULT_LOCATION + "\n" +
             "profiles:\n" +
             "    - name: \"dev\"\n" +
             "      user: \"wsadmin\"\n" +
@@ -31,21 +29,22 @@ public class ConfigManager {
         );
     }
 
-    static Profile readProfile(String profileName) throws FileNotFoundException {
+    static Profile readProfile(String profileName) {
         Yaml profiles = new Yaml(new Constructor(Config.class));
         Path path = Paths.get(DEFAULT_LOCATION);
         if (!path.toFile().isFile()) {
-            path = Paths.get(FALLBACK_LOCATION);
-            if (!path.toFile().isFile()) {
-                throw new RuntimeException("No configuration file found");
-            }
+            throw new RuntimeException("No configuration file found");
         }
 
-        return profiles.<Config>load(new FileInputStream(path.toFile()))
-                .profiles.stream()
-                .filter(p -> p.name.equals(profileName))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Configuration not found for profile " + profileName));
+        try {
+            return profiles.<Config>load(new FileInputStream(path.toFile()))
+                    .profiles.stream()
+                    .filter(p -> p.name.equals(profileName))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Configuration not found for profile " + profileName));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static class Config {

@@ -1,5 +1,6 @@
 package io.github.molok.wasdeployer;
 
+import ch.qos.logback.classic.Level;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -10,6 +11,7 @@ import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,7 +23,14 @@ import java.util.stream.Collectors;
 public class App {
     static Logger log = LoggerFactory.getLogger(App.class);
 
-    public void list(String server, String user, String password) {
+    public void list(String server, String user, String password, int verbosity) {
+        if (verbosity == 0) {
+            shutup();
+        } else if (verbosity == 1) {
+            changeLogLevel(Level.INFO);
+        } else {
+            changeLogLevel(Level.TRACE);
+        }
         WebDriverManager.chromedriver().setup();
         WebDriver driver = new ChromeDriver(
                 new ChromeOptions()
@@ -33,6 +42,13 @@ public class App {
         } finally {
             driver.quit();
         }
+    }
+
+    private void shutup() {
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+        System.setProperty("webdriver.chrome.args", "--disable-logging");
+        System.setProperty("webdriver.chrome.silentOutput", "true");
     }
 
     private List<AppStatus> doList(String server, String user, String password, WebDriver driver) {
@@ -61,7 +77,17 @@ public class App {
                        String appName,
                        boolean newInstall,
                        String serverNamesRegex,
-                       boolean showGui) {
+                       boolean showGui,
+                       int verbosity) {
+
+        if (verbosity == 0) {
+            shutup();
+        } else if (verbosity == 1) {
+            changeLogLevel(Level.INFO);
+        } else {
+            changeLogLevel(Level.TRACE);
+        }
+
         WebDriverManager.chromedriver().setup();
         WebDriver driver = new ChromeDriver(
                 new ChromeOptions()
@@ -72,6 +98,11 @@ public class App {
         } finally {
             driver.quit();
         }
+    }
+
+    private void changeLogLevel(Level info) {
+        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        root.setLevel(info);
     }
 
     private void doDeploy(String baseUrl, String user, String password, String warLocation, String contextRoot, boolean isLocalFile, String appName, boolean newInstall, String serverNamesRegex, WebDriver driver) {
@@ -250,7 +281,7 @@ public class App {
     private void assertStep(WebDriver driver, String expected) {
         String currStep = driver.findElement(By.xpath("//input[@name='currentStep']")).getAttribute("value");
         if (!currStep.equalsIgnoreCase(expected)) {
-            log.error(driver.getPageSource());
+            log.debug(driver.getPageSource());
             throw new RuntimeException("Wrong step " + expected + " found " + currStep);
         }
     }
