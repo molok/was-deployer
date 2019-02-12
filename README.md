@@ -12,7 +12,7 @@ The code is written in Java and uses Selenium with the Chrome WebDriver, it can 
 On the first startup the Chrome WebDriver is downloaded for the official website, a Chrome installation is required.
 
 ```
-usage: java -jar was-deployer.jar  -a <user:password> [-c <app_context_root>] -f
+usage: java -jar was-deployer.jar deploy -a <user:password> [-c <app_context_root>] -f
        <war_path> | -r <war_remote_path> [-g] -i | -u -n <app_name>  -s
        <server_url> [-sn <server_name>]
  -a,--auth <user:password>             WAS username and password, e.g.
@@ -35,7 +35,7 @@ usage: java -jar was-deployer.jar  -a <user:password> [-c <app_context_root>] -f
 
 version 1.0.1
 
-example: java -jar was-deployer -i -f ./app.war -n app -s 'https://localhost:9043' -a wsadmin:secret
+example: java -jar was-deployer deploy -i -f ./app.war -n app -s 'https://localhost:9043' -a wsadmin:secret
 
 ```
 
