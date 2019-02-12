@@ -21,23 +21,40 @@ public class Main {
 
     private static int doMain(String[] args) {
         try {
-            if (args.length > 1) {
+            if (args.length > 0) {
                 String action = args[0];
                 switch (action) {
                     case "deploy": {
                         try {
                             CommandLine cli = new DefaultParser().parse(deployOptions(), args);
 
+                            String user;
+                            String password;
+                            String server;
+                            String serverNames;
+
+                            if (cli.hasOption("p")) {
+                                ConfigReader.Profile profile = ConfigReader.profile(cli.getOptionValue("p"));
+                                server = profile.server;
+                                user = profile.user;
+                                password = profile.password;
+                                serverNames = profile.serverNames;
+                            } else {
+                                server = cli.getOptionValue("s");
+                                user = cli.getOptionValue("a").split(":")[0];
+                                password = cli.getOptionValue("a").split(":")[1];
+                                serverNames = cli.getOptionValue("sn", "");
+                            }
                             new App().deploy(
-                                    cli.getOptionValue("s"),
-                                    cli.getOptionValue("a").split(":")[0],
-                                    cli.getOptionValue("a").split(":")[1],
+                                    server,
+                                    user,
+                                    password,
                                     cli.getOptionValue("f", cli.getOptionValue("r")),
                                     cli.getOptionValue("c", cli.getOptionValue("n")),
                                     cli.hasOption("f"),
                                     cli.getOptionValue("n"),
                                     cli.hasOption("i"),
-                                    cli.getOptionValue("sn", ""),
+                                    serverNames,
                                     cli.hasOption("g"));
 
                             return RetCode.SUCCESS.code;
@@ -51,10 +68,25 @@ public class Main {
                         try {
                             CommandLine cli = new DefaultParser().parse(listOptions(), args);
 
+                            String server;
+                            String user;
+                            String password;
+
+                            if (cli.hasOption("p")) {
+                                ConfigReader.Profile profile = ConfigReader.profile(cli.getOptionValue("p"));
+                                server = profile.server;
+                                user = profile.user;
+                                password = profile.password;
+                            } else {
+                                server = cli.getOptionValue("s");
+                                user = cli.getOptionValue("a").split(":")[0];
+                                password = cli.getOptionValue("a").split(":")[1];
+                            }
+
                             new App().list(
-                                    cli.getOptionValue("s"),
-                                    cli.getOptionValue("a").split(":")[0],
-                                    cli.getOptionValue("a").split(":")[1]);
+                                    server,
+                                    user,
+                                    password);
 
                             return RetCode.SUCCESS.code;
                         } catch (MissingOptionException e) {
@@ -115,11 +147,17 @@ public class Main {
     private static Options listOptions() {
         Options opts = new Options();
 
+        opts.addOption(Option.builder("p")
+                .longOpt("profile")
+                .hasArg()
+                .argName("profile_name")
+                .desc("Name of the profile set in ~/.config/was-deployer.conf or $HOME/.was-deployer.conf")
+                .build());
+
         opts.addOption(Option.builder("s")
                 .longOpt("server")
                 .hasArg()
                 .argName("server_url")
-                .required()
                 .desc("URL of the server, e.g. https://localhost:9043")
                 .build());
 
@@ -128,7 +166,6 @@ public class Main {
                 .hasArg()
                 .valueSeparator(':')
                 .argName("user:password")
-                .required()
                 .desc("WAS username and password, e.g. wsadmin:secret")
                 .build());
 
