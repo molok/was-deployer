@@ -1,6 +1,5 @@
 package io.github.molok.wasdeployer;
 
-import org.apache.commons.cli.OptionGroup;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
