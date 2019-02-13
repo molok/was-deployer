@@ -12,28 +12,79 @@ The code is written in Java and uses Selenium with the Chrome WebDriver, it can 
 On the first startup the Chrome WebDriver is downloaded for the official website, a Chrome installation is required.
 
 ```
-usage: java -jar was-deployer.jar deploy -a <user:password> [-c <app_context_root>] -f
-       <war_path> | -r <war_remote_path> [-g] -i | -u -n <app_name>  -s
-       <server_url> [-sn <server_name>]
- -a,--auth <user:password>             WAS username and password, e.g.
-                                       wsadmin:secret
- -c,--contextroot <app_context_root>   context-root (if not supplied the name of
-                                       the application is used)
- -f,--file <war_path>                  location of the WAR to deploy, it needs
-                                       to be accessible by the server
- -g,--gui                              the browser is shown, by the default it
-                                       is run headless
- -i,--install                          install the application
- -n,--name <app_name>                  name of the application
- -r,--remote <war_remote_path>         remote location of the WAR to deploy
- -s,--server <server_url>              URL of the server, e.g.
-                                       https://localhost:9043
- -sn,--servernames <server_name>       Java regex of the server where the WAR
-                                       will be installed, e.g.
-                                       (.*AppCluster.*|.*webserver.*)
- -u,--update                           update the application
+WAS-Deployer v1.0.2
 
-version 1.0.1
+usage:
+
+java -jar was-deployer.jar deploy|start|stop|uninstall|list|config-sample [<args>]
+
+deploy
+ -a,--auth <user:password>         WAS username and password, e.g. wsadmin:secret
+ -c,--contextroot <context_root>   context-root (if not supplied the name of the application is
+                                   used)
+ -f,--file <war_path>              location of the WAR to deploy, it needs to be accessible by
+                                   the server
+ -g,--gui                          the browser is shown, by the default it is run headless
+ -i,--install                      install the application
+ -n,--name <app_name>              name of the application (if not supplied the name it is
+                                   derived from the war filename)
+ -p,--profile <profile_name>       Name of the profile set in
+                                   $HOME/.config/was-deployer.yaml, overrides --server,
+                                   --auth and --servernames
+ -r,--remote <war_remote_path>     remote location of the WAR to deploy
+ -s,--server <server_url>          URL of the server, e.g. https://example.org:9043
+ -sn,--servernames <server_name>   Java regex of the server where the WAR will be installed,
+                                   e.g. (.*AppCluster.*|.*webserver.*)
+ -u,--update                       update the application
+ -v,--verbose                      Increase verbosity
+ -vv,--very-verbose                Increase verbosity more
+
+list
+ -a,--auth <user:password>     WAS username and password, e.g. wsadmin:secret
+ -n,--name <app_name>          name of the application, if not supplied all installed
+                               applications will be listed
+ -p,--profile <profile_name>   Name of the profile set in
+                               $HOME/.config/was-deployer.yaml, overrides --server,
+                               --auth
+ -s,--server <server_url>      URL of the server, e.g. https://example.org:9043
+ -v,--verbose                  Increase verbosity
+ -vv,--very-verbose            Increase verbosity more
+
+start
+ -a,--auth <user:password>     WAS username and password, e.g. wsadmin:secret
+ -n,--name <app_name>          name of the application, if not supplied all installed
+                               applications will be listed
+ -p,--profile <profile_name>   Name of the profile set in
+                               $HOME/.config/was-deployer.yaml, overrides --server,
+                               --auth
+ -s,--server <server_url>      URL of the server, e.g. https://example.org:9043
+ -v,--verbose                  Increase verbosity
+ -vv,--very-verbose            Increase verbosity more
+
+stop
+ -a,--auth <user:password>     WAS username and password, e.g. wsadmin:secret
+ -n,--name <app_name>          name of the application, if not supplied all installed
+                               applications will be listed
+ -p,--profile <profile_name>   Name of the profile set in
+                               $HOME/.config/was-deployer.yaml, overrides --server,
+                               --auth
+ -s,--server <server_url>      URL of the server, e.g. https://example.org:9043
+ -v,--verbose                  Increase verbosity
+ -vv,--very-verbose            Increase verbosity more
+
+uninstall
+ -a,--auth <user:password>     WAS username and password, e.g. wsadmin:secret
+ -n,--name <app_name>          name of the application, if not supplied all installed
+                               applications will be listed
+ -p,--profile <profile_name>   Name of the profile set in
+                               $HOME/.config/was-deployer.yaml, overrides --server,
+                               --auth
+ -s,--server <server_url>      URL of the server, e.g. https://example.org:9043
+ -v,--verbose                  Increase verbosity
+ -vv,--very-verbose            Increase verbosity more
+
+config-sample
+
 
 examples: 
 deploy app.war to a WAS local instance
@@ -51,6 +102,9 @@ $HOME/.config/was-deployer.yaml looks like this:
           password: "secret"
           server: "https://localhost:9043" 
           serverNames: ""
+          
+stop an application on dev instance:
+    $ java -jar was-deployer.jar stop -n app -p dev          
 
 
 ```

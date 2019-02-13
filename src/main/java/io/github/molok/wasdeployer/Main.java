@@ -170,14 +170,14 @@ public class Main {
         HelpFormatter hf = new HelpFormatter();
         hf.setSyntaxPrefix("");
         hf.setWidth(terminalWidth());
-        hf.printHelp("java -jar was-deployer.jar deploy|list|config-sample [<args>]\n" +
-                                 "\ndeploy        (deploy a war on a WAS instance)",
+        hf.printHelp("java -jar was-deployer.jar deploy|start|stop|uninstall|list|config-sample [<args>]\n" +
+                                 "\ndeploy",
                           "", deployOptions(), "", false);
-        hf.printHelp("\nlist          (list installed applications and their current state)", "", listOptions(), "");
+        hf.printHelp("\nlist", "", listOptions(), "");
         hf.printHelp("\nstart", "", lifecycleOptions(), "");
         hf.printHelp("\nstop", "", lifecycleOptions(), "");
         hf.printHelp("\nuninstall", "", lifecycleOptions(), "");
-        System.out.println("\nconfig-sample (prints a configuration example, to be placed in " + ConfigManager.DEFAULT_LOCATION + ")\n");
+        System.out.println("\nconfig-sample\n");
     }
 
     private static Options lifecycleOptions() {
