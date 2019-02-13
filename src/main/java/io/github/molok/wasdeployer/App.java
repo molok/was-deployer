@@ -229,7 +229,7 @@ public class App {
         printMessages("mapped servers", driver);
 
         if ("appmanagement.virtualhosts.towebmodules".equalsIgnoreCase(
-                driver.findElement(By.xpath("//input[@name='currentStep']")).getAttribute("value"))) {
+                currentStep(driver))) {
             // next button
             driver.findElement(By.xpath("//td[contains(@class, 'wizard-button-section')]/input[2]")).click();
             printMessages("mapped web-modules", driver);
@@ -242,6 +242,12 @@ public class App {
         driver.findElement(By.xpath("//td[contains(@class, 'wizard-button-section')]/input[2]")).click();
 
         printMessages("mapped context-root", driver);
+
+        if ("appmanagement.metadatacomplete.formodules".equalsIgnoreCase(currentStep(driver))) {
+            // next button
+            driver.findElement(By.xpath("//td[contains(@class, 'wizard-button-section')]/input[2]")).click();
+            printMessages("mapped metadata-complete", driver);
+        }
 
         assertStep(driver, "appmanagement.summary");
         // finish button
@@ -269,6 +275,10 @@ public class App {
         printMessages("start completed", driver);
 
         log.info("done!");
+    }
+
+    private String currentStep(WebDriver driver) {
+        return driver.findElement(By.xpath("//input[@name='currentStep']")).getAttribute("value");
     }
 
     private String canonicalizePath(String warLocation, boolean isLocalFile) {
@@ -338,7 +348,7 @@ public class App {
     }
 
     private void assertStep(WebDriver driver, String expected) {
-        String currStep = driver.findElement(By.xpath("//input[@name='currentStep']")).getAttribute("value");
+        String currStep = currentStep(driver);
         if (!currStep.equalsIgnoreCase(expected)) {
             log.debug(driver.getPageSource());
             throw new RuntimeException("Wrong step " + expected + " found " + currStep);
