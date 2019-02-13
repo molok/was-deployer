@@ -23,24 +23,89 @@ import java.util.stream.Collectors;
 public class App {
     static Logger log = LoggerFactory.getLogger(App.class);
 
-    public void list(String server, String user, String password, int verbosity) {
+    public void uninstall(String server, String user, String password, int verbosity, String appName) {
+        setVerbosity(verbosity);
+        WebDriver driver = webDriver(true);
+        try {
+            goToConsole(server, user, password, driver);
+            driver.findElement(By.id(appName + ".ear/deployments/" + appName)).click();
+            driver.findElement(By.id("button." + "uninstall" + "ApplicationDeployment")).click();
+            driver.findElement(By.xpath("//input[@id='ok']")).click();
+            driver.findElement(By.xpath("//a[contains(@href, 'directsave=true')]")).click();
+            printMessages("console", driver);
+        } finally {
+            driver.quit();
+        }
+    }
+
+
+    public void start(String server, String user, String password, int verbosity, String appName) {
+        setVerbosity(verbosity);
+        WebDriver driver = webDriver(true);
+        try {
+            goToConsole(server, user, password, driver);
+            driver.findElement(By.id(appName + ".ear/deployments/" + appName)).click();
+            driver.findElement(By.id("button." + "start" + "ApplicationDeployment")).click();
+            printMessages("console", driver);
+        } finally {
+            driver.quit();
+        }
+    }
+
+    public void stop(String server, String user, String password, int verbosity, String appName) {
+        setVerbosity(verbosity);
+        WebDriver driver = webDriver(true);
+        try {
+            goToConsole(server, user, password, driver);
+            driver.findElement(By.id(appName + ".ear/deployments/" + appName)).click();
+            driver.findElement(By.id("button." + "stop" + "ApplicationDeployment")).click();
+            printMessages("console", driver);
+        } finally {
+            driver.quit();
+        }
+
+    }
+
+    public void list(String server, String user, String password, int verbosity, String appName) {
+        setVerbosity(verbosity);
+        WebDriver driver = webDriver(true);
+        try {
+            goToConsole(server, user, password, driver);
+            List<String> apps = driver.findElements(By.xpath("//img[contains(@name, 'statusIconApplicationDeployment')]"))
+                    .stream()
+                    .map(img -> img.getAttribute("onmouseover"))
+                    .filter(script -> appName == null || script.contains("name=" + appName + "\""))
+                    .collect(Collectors.toList());
+
+            apps.stream().map(
+                    app -> {
+                        String url = app.substring(app.indexOf("\"") + 1, app.lastIndexOf("\""));
+                        driver.get(server + url);
+                        String status = driver.findElement(By.xpath("//body")).getText();
+                        String appName_ = url.split("name=")[1];
+                        return new AppStatus(appName_, status);
+                    }).collect(Collectors.toList())
+                    .forEach(as -> System.out.println(String.format("%-40s", as.app) + ": " + as.status));
+        } finally {
+            driver.quit();
+        }
+    }
+
+    private WebDriver webDriver(boolean headless) {
+        WebDriverManager.chromedriver().setup();
+        return new ChromeDriver(
+                new ChromeOptions()
+                        .setAcceptInsecureCerts(true)
+                        .setHeadless(headless));
+    }
+
+    private void setVerbosity(int verbosity) {
         if (verbosity == 0) {
             shutup();
         } else if (verbosity == 1) {
             changeLogLevel(Level.INFO);
         } else {
             changeLogLevel(Level.TRACE);
-        }
-        WebDriverManager.chromedriver().setup();
-        WebDriver driver = new ChromeDriver(
-                new ChromeOptions()
-                        .setAcceptInsecureCerts(true)
-                        .setHeadless(true));
-        try {
-            doList(server, user, password, driver)
-                    .forEach(as -> System.out.println(String.format("%-40s", as.app) + ": " + as.status));
-        } finally {
-            driver.quit();
         }
     }
 
@@ -49,23 +114,6 @@ public class App {
         SLF4JBridgeHandler.install();
         System.setProperty("webdriver.chrome.args", "--disable-logging");
         System.setProperty("webdriver.chrome.silentOutput", "true");
-    }
-
-    private List<AppStatus> doList(String server, String user, String password, WebDriver driver) {
-        goToConsole(server, user, password, driver);
-        List<String> apps = driver.findElements(By.xpath("//img[contains(@name, 'statusIconApplicationDeployment')]"))
-                .stream()
-                .map(app -> app.getAttribute("onmouseover"))
-                .collect(Collectors.toList());
-
-        return apps.stream().map(
-                app -> {
-                    String url = app.substring(app.indexOf("\"") + 1, app.lastIndexOf("\""));
-                    driver.get(server + url);
-                    String status = driver.findElement(By.xpath("//body")).getText();
-                    String appName = url.split("name=")[1];
-                    return new AppStatus(appName, status);
-                }).collect(Collectors.toList());
     }
 
     public void deploy(String baseUrl,
@@ -80,19 +128,9 @@ public class App {
                        boolean showGui,
                        int verbosity) {
 
-        if (verbosity == 0) {
-            shutup();
-        } else if (verbosity == 1) {
-            changeLogLevel(Level.INFO);
-        } else {
-            changeLogLevel(Level.TRACE);
-        }
+        setVerbosity(verbosity);
 
-        WebDriverManager.chromedriver().setup();
-        WebDriver driver = new ChromeDriver(
-                new ChromeOptions()
-                        .setAcceptInsecureCerts(true)
-                        .setHeadless(!showGui));
+        WebDriver driver = webDriver(!showGui);
         try {
             doDeploy(baseUrl, user, password, warLocation, contextRoot, isLocalFile, appName, newInstall, serverNamesRegex, driver);
         } finally {

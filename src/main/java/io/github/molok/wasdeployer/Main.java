@@ -1,11 +1,16 @@
 package io.github.molok.wasdeployer;
 
 import org.apache.commons.cli.*;
+import org.openqa.selenium.InvalidArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Paths;
+import java.security.InvalidParameterException;
 import java.util.List;
+import java.util.Objects;
+
+import static io.github.molok.wasdeployer.CliOptions.*;
 
 public class Main {
     static Logger log = LoggerFactory.getLogger(Main.class);
@@ -33,46 +38,32 @@ public class Main {
                         try {
                             CommandLine cli = new DefaultParser().parse(deployOptions(), args);
 
-                            String user;
-                            String password;
-                            String server;
-                            String serverNames;
+                            ServerParams serverParams = new ServerParams(cli);
 
-                            if (cli.hasOption("p")) {
-                                ConfigManager.Profile profile = ConfigManager.readProfile(cli.getOptionValue("p"));
-                                server = profile.server;
-                                user = profile.user;
-                                password = profile.password;
-                                serverNames = profile.serverNames;
-                            } else {
-                                server = cli.getOptionValue("s");
-                                user = cli.getOptionValue("a").split(":")[0];
-                                password = cli.getOptionValue("a").split(":")[1];
-                                serverNames = cli.getOptionValue("sn", "");
-                            }
-                            String warLocation = cli.getOptionValue("f", cli.getOptionValue("r"));
+                            String warLocation = cli.getOptionValue(LOCAL_FILE.getOpt(), cli.getOptionValue(REMOTE_FILE.getOpt()));
 
-                            String appName = cli.getOptionValue("n", toAppName(warLocation));
-                            String contextRoot = cli.getOptionValue("c", appName);
+                            String appName = cli.getOptionValue(APP_NAME_DEPLOY.getOpt(), toAppName(warLocation));
+                            String contextRoot = cli.getOptionValue(CONTEXT_ROOT.getOpt(), appName);
 
                             new App().deploy(
-                                    server,
-                                    user,
-                                    password,
+                                    serverParams.server,
+                                    serverParams.user,
+                                    serverParams.password,
                                     warLocation,
                                     contextRoot,
-                                    cli.hasOption("f"),
+                                    cli.hasOption(LOCAL_FILE.getOpt()),
                                     appName,
-                                    cli.hasOption("i"),
-                                    serverNames,
-                                    cli.hasOption("g"),
+                                    cli.hasOption(INSTALL.getOpt()),
+                                    serverParams.serverNames,
+                                    cli.hasOption(GUI.getOpt()),
                                     verbosityLevel(cli)
                             );
 
                             return RetCode.SUCCESS.code;
                         } catch (MissingOptionException e) {
                             printUsage();
-                            System.out.println("Missing required options: " + missingArguments(e, deployOptions()));
+                            // FIXME
+                            System.out.println("\n\nMissing required options: " + missingArguments(e, deployOptions()));
                             return RetCode.INVALID_ARGS.code;
                         }
                     }
@@ -80,22 +71,10 @@ public class Main {
                         try {
                             CommandLine cli = new DefaultParser().parse(listOptions(), args);
 
-                            String server;
-                            String user;
-                            String password;
+                            ServerParams serverParams = new ServerParams(cli);
 
-                            if (cli.hasOption("p")) {
-                                ConfigManager.Profile profile = ConfigManager.readProfile(cli.getOptionValue("p"));
-                                server = profile.server;
-                                user = profile.user;
-                                password = profile.password;
-                            } else {
-                                server = cli.getOptionValue("s");
-                                user = cli.getOptionValue("a").split(":")[0];
-                                password = cli.getOptionValue("a").split(":")[1];
-                            }
-
-                            new App().list( server, user, password, verbosityLevel(cli));
+                            new App().list( serverParams.server, serverParams.user, serverParams.password,
+                                            verbosityLevel(cli), cli.getOptionValue(APP_NAME.getOpt()));
 
                             return RetCode.SUCCESS.code;
                         } catch (MissingOptionException e) {
@@ -103,6 +82,24 @@ public class Main {
                             System.out.println("Missing required options: " + missingArguments(e, listOptions()));
                             return RetCode.INVALID_ARGS.code;
                         }
+                    }
+                    case "start": {
+                        CommandLine cli = new DefaultParser().parse(lifecycleOptions(), args);
+                        ServerParams serverParams = new ServerParams(cli);
+                        new App().start(serverParams.server, serverParams.user, serverParams.password, verbosityLevel(cli), cli.getOptionValue(APP_NAME_LIFECYCLE.getOpt()));
+                        return RetCode.SUCCESS.code;
+                    }
+                    case "stop": {
+                        CommandLine cli = new DefaultParser().parse(lifecycleOptions(), args);
+                        ServerParams serverParams = new ServerParams(cli);
+                        new App().stop(serverParams.server, serverParams.user, serverParams.password, verbosityLevel(cli), cli.getOptionValue(APP_NAME_LIFECYCLE.getOpt()));
+                        return RetCode.SUCCESS.code;
+                    }
+                    case "uninstall": {
+                        CommandLine cli = new DefaultParser().parse(lifecycleOptions(), args);
+                        ServerParams serverParams = new ServerParams(cli);
+                        new App().uninstall(serverParams.server, serverParams.user, serverParams.password, verbosityLevel(cli), cli.getOptionValue(APP_NAME_LIFECYCLE.getOpt()));
+                        return RetCode.SUCCESS.code;
                     }
                 }
             }
@@ -119,7 +116,7 @@ public class Main {
     }
 
     private static int verbosityLevel(CommandLine cli) {
-        return cli.hasOption("vv") ? 2 : cli.hasOption("v") ? 1 : 0;
+        return cli.hasOption(VERY_VERBOSE.getOpt()) ? 2 : cli.hasOption(VERBOSE.getOpt()) ? 1 : 0;
     }
 
     static String toAppName(String warLocation) {
@@ -177,43 +174,33 @@ public class Main {
                                  "\ndeploy        (deploy a war on a WAS instance)",
                           "", deployOptions(), "", false);
         hf.printHelp("\nlist          (list installed applications and their current state)", "", listOptions(), "");
-        System.out.println("\nconfig-sample (prints a configuration example, to be placed in " + ConfigManager.DEFAULT_LOCATION + ")");
+        hf.printHelp("\nstart", "", lifecycleOptions(), "");
+        hf.printHelp("\nstop", "", lifecycleOptions(), "");
+        hf.printHelp("\nuninstall", "", lifecycleOptions(), "");
+        System.out.println("\nconfig-sample (prints a configuration example, to be placed in " + ConfigManager.DEFAULT_LOCATION + ")\n");
+    }
+
+    private static Options lifecycleOptions() {
+        Options opts = new Options();
+
+        opts.addOption(APP_NAME_LIFECYCLE);
+        opts.addOption(CliOptions.VERBOSE);
+        opts.addOption(VERY_VERBOSE);
+        opts.addOption(PROFILE);
+        opts.addOption(CliOptions.SERVER);
+        opts.addOption(CliOptions.AUTH);
+
+        return opts;
     }
 
     private static Options listOptions() {
         Options opts = new Options();
-
-        opts.addOption(Option.builder("v")
-                .longOpt("verbose")
-                .desc("Increase verbosity")
-                .build());
-
-        opts.addOption(Option.builder("vv")
-                .longOpt("very-verbose")
-                .desc("Increase verbosity more")
-                .build());
-
-        opts.addOption(Option.builder("p")
-                .longOpt("profile")
-                .hasArg()
-                .argName("profile_name")
-                .desc("Name of the profile set in " + ConfigManager.DEFAULT_LOCATION + ", overrides --server, --auth")
-                .build());
-
-        opts.addOption(Option.builder("s")
-                .longOpt("server")
-                .hasArg()
-                .argName("server_url")
-                .desc("URL of the server, e.g. https://example.org:9043")
-                .build());
-
-        opts.addOption(Option.builder("a")
-                .longOpt("auth")
-                .hasArg()
-                .valueSeparator(':')
-                .argName("user:password")
-                .desc("WAS username and password, e.g. wsadmin:secret")
-                .build());
+        opts.addOption(CliOptions.APP_NAME);
+        opts.addOption(CliOptions.VERBOSE);
+        opts.addOption(VERY_VERBOSE);
+        opts.addOption(CliOptions.PROFILE);
+        opts.addOption(CliOptions.SERVER);
+        opts.addOption(CliOptions.AUTH);
 
         return opts;
     }
@@ -221,99 +208,58 @@ public class Main {
     private static Options deployOptions() {
         Options opts = new Options();
 
-        opts.addOption(Option.builder("v")
-                .longOpt("verbose")
-                .desc("Increase verbosity")
-                .build());
-
-        opts.addOption(Option.builder("vv")
-                .longOpt("very-verbose")
-                .desc("Increase verbosity more")
-                .build());
-
-        opts.addOption(Option.builder("p")
-                .longOpt("profile")
-                .hasArg()
-                .argName("profile_name")
-                .desc("Name of the profile set in " + ConfigManager.DEFAULT_LOCATION + ", overrides --server, --auth and --servernames")
-                .build());
-
-        opts.addOption(Option.builder("s")
-                .longOpt("server")
-                .hasArg()
-                .argName("server_url")
-                .desc("URL of the server, e.g. https://example.org:9043")
-                .build());
-
-        opts.addOption(Option.builder("a")
-                .longOpt("auth")
-                .hasArg()
-                .valueSeparator(':')
-                .argName("user:password")
-                .desc("WAS username and password, e.g. wsadmin:secret")
-                .build());
-
-        opts.addOption(Option.builder("g")
-                .longOpt("gui")
-                .desc("the browser is shown, by the default it is run headless")
-                .build());
+        opts.addOption(CliOptions.VERBOSE);
+        opts.addOption(VERY_VERBOSE);
+        opts.addOption(CliOptions.PROFILE_DEPLOY);
+        opts.addOption(CliOptions.SERVER);
+        opts.addOption(CliOptions.AUTH);
+        opts.addOption(CliOptions.GUI);
 
         OptionGroup installOrUpdate = new OptionGroup();
         installOrUpdate.setRequired(true);
-        installOrUpdate.addOption(
-                Option.builder("i")
-                        .longOpt("install")
-                        .hasArg(false)
-                        .desc("install the application")
-                        .build());
-
-        installOrUpdate.addOption(
-                Option.builder("u")
-                        .longOpt("update")
-                        .hasArg(false)
-                        .desc("update the application")
-                        .build());
+        installOrUpdate.addOption(CliOptions.INSTALL);
+        installOrUpdate.addOption(CliOptions.UPDATE);
 
         opts.addOptionGroup(installOrUpdate);
 
         OptionGroup localOrRemote = new OptionGroup();
         localOrRemote.setRequired(true);
-        localOrRemote.addOption( Option.builder("f")
-                .longOpt("file")
-                .hasArg()
-                .argName("war_path")
-                .desc("location of the WAR to deploy, it needs to be accessible by the server")
-                .build());
-        localOrRemote.addOption(Option.builder("r")
-                .longOpt("remote")
-                .hasArg()
-                .argName("war_remote_path")
-                .desc("remote location of the WAR to deploy")
-                .build());
+        localOrRemote.addOption(CliOptions.LOCAL_FILE);
+        localOrRemote.addOption(CliOptions.REMOTE_FILE);
 
         opts.addOptionGroup(localOrRemote);
 
-        opts.addOption(Option.builder("c")
-                .longOpt("contextroot")
-                .hasArg()
-                .argName("context_root")
-                .desc("context-root (if not supplied the name of the application is used)")
-                .build());
-
-        opts.addOption(Option.builder("n")
-                .longOpt("name")
-                .hasArg()
-                .argName("app_name")
-                .desc("name of the application (if not supplied the name it is derived from the war filename")
-                .build());
-
-        opts.addOption(Option.builder("sn")
-                .longOpt("servernames")
-                .argName("server_name")
-                .hasArg()
-                .desc("Java regex of the server where the WAR will be installed, e.g. (.*AppCluster.*|.*webserver.*)")
-                .build());
+        opts.addOption(CliOptions.CONTEXT_ROOT);
+        opts.addOption(CliOptions.APP_NAME_DEPLOY);
+        opts.addOption(CliOptions.SERVER_NAMES);
 
         return opts;
+    }
+
+    private static class ServerParams {
+        public String user;
+        public String password;
+        public String server;
+        public String serverNames;
+
+        public ServerParams(CommandLine cli) {
+            if (cli.hasOption(PROFILE.getOpt())) {
+                ConfigManager.Profile profile = ConfigManager.readProfile(cli.getOptionValue(PROFILE.getOpt()));
+                server = profile.server;
+                user = profile.user;
+                password = profile.password;
+                serverNames = profile.serverNames;
+            } else {
+                server = Objects.requireNonNull(cli.getOptionValue(SERVER.getOpt()), "--server or --profile required");
+                String[] split = Objects.requireNonNull(cli.getOptionValue(AUTH.getOpt(), "--auth or --profile required"))
+                                 .split(":");
+                if (split.length != 2) {
+                    throw new InvalidParameterException("for auth expected --auth user:password");
+                }
+                user = split[0];
+                password = split[1];
+                serverNames = cli.getOptionValue(SERVER_NAMES.getOpt(), "");
+            }
+        }
     }
 }
