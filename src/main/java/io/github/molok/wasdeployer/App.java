@@ -12,7 +12,10 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
+import javax.xml.xpath.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,6 +25,24 @@ import java.util.stream.Collectors;
 
 public class App {
     static Logger log = LoggerFactory.getLogger(App.class);
+
+    private static String evaluateXPath(Document document, String xpathExpression) {
+        XPathFactory xpathFactory = XPathFactory.newInstance();
+        XPath xpath = xpathFactory.newXPath();
+
+        try {
+            XPathExpression expr = xpath.compile(xpathExpression);
+            NodeList nodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+
+            if (nodes.getLength() > 0) {
+                return nodes.item(0).getNodeValue();
+            }
+        } catch (XPathExpressionException e) {
+            throw new RuntimeException(e);
+        }
+
+        return "";
+    }
 
     public void uninstall(String server, String user, String password, int verbosity, String appName) {
         setVerbosity(verbosity);

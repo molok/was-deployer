@@ -1,7 +1,6 @@
 package io.github.molok.wasdeployer;
 
 import org.apache.commons.cli.*;
-import org.openqa.selenium.InvalidArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +8,7 @@ import java.nio.file.Paths;
 import java.security.InvalidParameterException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static io.github.molok.wasdeployer.CliOptions.*;
 
@@ -39,11 +39,14 @@ public class Main {
                             CommandLine cli = new DefaultParser().parse(deployOptions(), args);
 
                             ServerParams serverParams = new ServerParams(cli);
-
                             String warLocation = cli.getOptionValue(LOCAL_FILE.getOpt(), cli.getOptionValue(REMOTE_FILE.getOpt()));
-
                             String appName = cli.getOptionValue(APP_NAME_DEPLOY.getOpt(), toAppName(warLocation));
-                            String contextRoot = cli.getOptionValue(CONTEXT_ROOT.getOpt(), appName);
+
+                            Optional<String> warContext = Optional.empty();
+
+                            String contextRoot = cli.getOptionValue(CONTEXT_ROOT.getOpt(), warContext(cli).orElse(appName));
+
+                            log.info("context-root: " + contextRoot);
 
                             new App().deploy(
                                     serverParams.server,
@@ -113,6 +116,14 @@ public class Main {
             e.printStackTrace();
             return RetCode.ERROR.code;
         }
+    }
+
+    private static Optional<String> warContext(CommandLine cli) {
+        if (cli.hasOption(LOCAL_FILE.getOpt())) {
+            String absolutePath = Paths.get(cli.getOptionValue(LOCAL_FILE.getOpt())).toFile().getAbsolutePath();
+            return ContextRootReader.getContextRoot(absolutePath);
+        }
+        return Optional.empty();
     }
 
     private static int verbosityLevel(CommandLine cli) {
