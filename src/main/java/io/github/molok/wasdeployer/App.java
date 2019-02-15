@@ -220,7 +220,7 @@ public class App {
         // next button
         driver.findElement(By.xpath("//td[contains(@class, 'wizard-button-section')]/input[2]")).click();
 
-        printMessages("mapped context-root", driver);
+        printMessages("mapped context-root: " + contextRoot, driver);
 
         if ("appmanagement.metadatacomplete.formodules".equalsIgnoreCase(currentStep(driver))) {
             // next button
