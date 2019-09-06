@@ -9,6 +9,8 @@ import java.security.InvalidParameterException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.github.molok.wasdeployer.CliOptions.*;
 
@@ -135,7 +137,11 @@ public class Main {
         if (res.indexOf(".") >= 0) {
             res = res.substring(0, res.indexOf("."));
         }
-        return res.replaceAll("[\\/,#$@:;\"*?<>|=+&%\\]]", "_");
+        String regex = "^[A-z_-]+[A-z0-9]+[A-z0-9]";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(res);
+        matcher.find();
+        return matcher.group().replaceAll("[\\/,#$@:;\"*?<>|=+&%\\]]", "_");
     }
 
     private static String missingArguments(MissingOptionException e, Options options) {

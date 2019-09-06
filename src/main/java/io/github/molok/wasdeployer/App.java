@@ -234,7 +234,7 @@ public class App {
 
         printMessages("reached summary", driver);
 
-        new WebDriverWait(driver, 180)
+        new WebDriverWait(driver, 1000)
                 .pollingEvery(Duration.ofSeconds(1))
                 .until(drv -> {
                     drv.findElements(By.xpath("//p[@class='status-text']")).forEach(t -> System.out.println("WAS: " + t.getText().replace("\n", "\nWAS: ")));

@@ -12,12 +12,11 @@ public class MainTest {
         assertThat(toAppName("foo")).isEqualTo("foo");
         assertThat(toAppName("foo.war")).isEqualTo("foo");
         assertThat(toAppName("foo.ear")).isEqualTo("foo");
-        assertThat(toAppName("foo$.ear")).isEqualTo("foo_");
         assertThat(toAppName("foo-bar.war")).isEqualTo("foo-bar");
         assertThat(toAppName("FOO-bar.war")).isEqualTo("FOO-bar");
-        assertThat(toAppName(".war")).isEqualTo("");
         assertThat(toAppName("war.war")).isEqualTo("war");
-        assertThat(toAppName("war@war")).isEqualTo("war_war");
+        assertThat(toAppName("foo-bar.war")).isEqualTo("foo-bar");
+        assertThat(toAppName("certificazionemorosita-api-0.0.8.war")).isEqualTo("certificazionemorosita-api");
     }
 
 }
